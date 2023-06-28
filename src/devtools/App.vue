@@ -48,6 +48,12 @@
               :push-other-panes="false"
               @resized="resized"
             >
+              <pane class="overflow-hidden bg-white max-h-5 dark:bg-gray-900">
+                <Button v-tooltip.bottom="'Generate Apollo Mock'" @click.stop="generateApolloMock">
+                  <CopyIcon class="w-4 h-4" />
+                  <span>Generate Apollo Mock</span>
+                </Button>
+              </pane>
               <pane :size="100 - variablesSize" style="min-height: 2.5rem">
                 <Query
                   ref="query"
@@ -98,7 +104,9 @@ import Query from '@/components/Query'
 import Variables from '@/components/Variables'
 import Response from '@/components/Response'
 import Settings from '@/components/Settings'
+import Button from '@/components/base/Button.vue'
 
+import CopyIcon from '@/assets/copy.svg'
 import Logo from '@/assets/logo-small.svg'
 import Ghost from '@/assets/ghost.svg'
 import CogIcon from '@/assets/cog.svg'
@@ -116,6 +124,8 @@ export default {
     Logo,
     Ghost,
     CogIcon,
+    Button,
+    CopyIcon,
   },
   data() {
     return {
@@ -194,6 +204,20 @@ export default {
       this.setLastState({
         clearedAt: Date.now(),
       })
+    },
+    async generateApolloMock() {
+      if (!this.activeId) return;
+      const entry = this.entries?.find((item) => item && item.id === this.activeId);
+      if (entry == null) return;
+      const query = entry?.request?.query?.replace(/\n$/, '');
+      const variables = entry?.request?.variables;
+      try {
+        const { data, errors } = await entry?.response?.getResponse();
+        const result = errors || data;
+        this.$copyText(JSON.stringify({request: {query, variables}, result}, null, 2))
+      } catch (e) {
+        alert(e?.message ?? 'Error generating mock');
+      }
     },
   },
 }
